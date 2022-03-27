@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.22 <0.9.0;
+pragma solidity ^0.8.3;
 
 contract CertChain {
-  constructor() public {
+  uint256 public sampleData;
+
+  constructor() {
+    sampleData = 0;
   }
 }
