@@ -45,12 +45,12 @@ contract Nft is ERC721URIStorage, AccessControl {
         return baseTokenURI;
     }
 
-    function mint(address receiver) external onlyRole(MINTER_ROLE) {
+    function mint(address receiver, bytes32 tokenId, string memory tokenUri) external onlyRole(MINTER_ROLE) {
         require(numTokensMinted < maxSupply, "Exceeding max supply");
 
-        _safeMint(receiver, numTokensMinted);
-        _setTokenURI(numTokensMinted, numTokensMinted.toString());
-        emit MintNft(receiver, numTokensMinted);
+        _safeMint(receiver, uint256(tokenId));
+        _setTokenURI(uint256(tokenId), tokenUri);
+        emit MintNft(receiver, uint256(tokenId));
 
         numTokensMinted += 1;
     }
