@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract Nft is ERC721URIStorage, AccessControl {
     using Strings for uint256;
 
+
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     event MintNft(address indexed sender, uint256 startWith);
@@ -21,6 +22,11 @@ contract Nft is ERC721URIStorage, AccessControl {
     /* The base url for nft tokens */
     string public baseTokenURI;
 
+    mapping(uint256 => bool) private isActive;
+    mapping(bytes32 => uint256[]) private listOfCertsId;
+    mapping(uint256 => bytes32) private certholder;
+
+
     constructor(
         string memory initialURI,
         uint256 _maxSupply
@@ -29,6 +35,22 @@ contract Nft is ERC721URIStorage, AccessControl {
         maxSupply = _maxSupply;
         
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
+
+    function getCertholder(uint256 id) external view returns(bytes32){
+        return certholder[id];
+    }
+
+    function getIsActiveCert(uint256 id) external view returns(bool) {
+        return isActive[id];
+    }
+
+    function setIsActiveCert(uint256 id, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        isActive[id] = status;
+    }
+
+    function getListOfCertsId(bytes32 certholderId) external view returns(uint256[] memory) {
+        return listOfCertsId[certholderId];
     }
 
     function setMaxSupply(uint256 _maxSupply) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -45,12 +67,19 @@ contract Nft is ERC721URIStorage, AccessControl {
         return baseTokenURI;
     }
 
-    function mint(address receiver, bytes32 tokenId, string memory tokenUri) external onlyRole(MINTER_ROLE) {
+    function _initMetadata(uint256 id, bytes32 certholderId) internal {
+        isActive[id] = true;
+        listOfCertsId[certholderId].push(id);
+        certholder[id] = certholderId;
+    }
+
+    function mint(address receiver, bytes32 certholderId, string memory tokenUri) external onlyRole(MINTER_ROLE) {
         require(numTokensMinted < maxSupply, "Exceeding max supply");
 
-        _safeMint(receiver, uint256(tokenId));
-        _setTokenURI(uint256(tokenId), tokenUri);
-        emit MintNft(receiver, uint256(tokenId));
+        _safeMint(receiver, numTokensMinted);
+        _setTokenURI(numTokensMinted, tokenUri);
+        _initMetadata(numTokensMinted, certholderId);
+        emit MintNft(receiver, numTokensMinted);
 
         numTokensMinted += 1;
     }
