@@ -17,7 +17,6 @@ contract Nft is ERC721URIStorage, AccessControl {
     event BaseURIChanged(string baseURI);
 
     uint256 public numTokensMinted;
-    uint256 public maxSupply;
 
     /* The base url for nft tokens */
     string public baseTokenURI;
@@ -28,13 +27,16 @@ contract Nft is ERC721URIStorage, AccessControl {
 
 
     constructor(
-        string memory initialURI,
-        uint256 _maxSupply
+        string memory initialURI
     ) ERC721("CertNFT", "CERT") {
         baseTokenURI = initialURI;
-        maxSupply = _maxSupply;
         
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
+
+    modifier onlyOwner(uint256 id) {
+        require(ownerOf(id)== _msgSender(), "Caller is not the owner");
+        _;
     }
 
     function getCertholder(uint256 id) external view returns(bytes32){
@@ -45,7 +47,7 @@ contract Nft is ERC721URIStorage, AccessControl {
         return isActive[id];
     }
 
-    function setIsActiveCert(uint256 id, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setIsActiveCert(uint256 id, bool status) external onlyOwner(id) {
         isActive[id] = status;
     }
 
@@ -53,10 +55,7 @@ contract Nft is ERC721URIStorage, AccessControl {
         return listOfCertsId[certholderId];
     }
 
-    function setMaxSupply(uint256 _maxSupply) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_maxSupply > maxSupply, "Invalid max supply");
-        maxSupply = _maxSupply;
-    }
+
 
     function setBaseURI(string memory baseURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
         baseTokenURI = baseURI;
@@ -74,8 +73,6 @@ contract Nft is ERC721URIStorage, AccessControl {
     }
 
     function mint(address receiver, bytes32 certholderId, string memory tokenUri) external onlyRole(MINTER_ROLE) {
-        require(numTokensMinted < maxSupply, "Exceeding max supply");
-
         _safeMint(receiver, numTokensMinted);
         _setTokenURI(numTokensMinted, tokenUri);
         _initMetadata(numTokensMinted, certholderId);
