@@ -55,8 +55,6 @@ contract Nft is ERC721URIStorage, AccessControl {
         return listOfCertsId[certholderId];
     }
 
-
-
     function setBaseURI(string memory baseURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
         baseTokenURI = baseURI;
         emit BaseURIChanged(baseURI);

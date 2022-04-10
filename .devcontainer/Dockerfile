@@ -1,1 +1,3 @@
-FROM trufflesuite/ganache-cli:latest
+FROM node:16
+
+RUN npm install ganache --global

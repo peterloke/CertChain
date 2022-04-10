@@ -2,7 +2,8 @@
   "dependencies": {
     "@ethersproject/experimental": "^5.5.0",
     "@openzeppelin/contracts": "^4.3.2",
-    "@openzeppelin/contracts-upgradeable": "^4.3.2"
+    "@openzeppelin/contracts-upgradeable": "^4.3.2",
+    "ipfs-http-client": "^56.0.2"
   },
   "devDependencies": {
     "truffle": "^5.5.6",
