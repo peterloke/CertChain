@@ -3,39 +3,49 @@ pragma solidity ^0.8.3;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * Simple NFT contract to CERT.
  */
 contract CertNFT is ERC721URIStorage, AccessControl {
+    using Counters for Counters.Counter;
     using Strings for uint256;
 
-    bytes32 public const MINTER_ROLE = keccak256("MINTER_ROLE");
-
-
-    event MintNft(address indexed sender, uint256 startWith);
-
-    uint256 private numTokensMinted;
-
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    address private _owner;
+    Counters.Counter private _tokenIds;
     
+    // uint256 private numTokensMinted;
+    // event MintNft(address indexed sender, uint256 startWith);
+    event MintNft(address indexed sender, uint256 tokenId);
 
 
-    constructor(
-    ) ERC721("CertNFT", "CERT") {
-        
+
+    constructor() ERC721("CertNFT", "CERT") {
+        _owner = _msgSender();
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
-    function getNumTokensMinted() public view returns(uint256){
-        return numTokensMinted;
-    }
+    // function getNumTokensMinted() public view returns(uint256){
+    //     return numTokensMinted;
+    // }
 
-    function mint(address receiver string memory tokenUri) public onlyRole(MINTER_ROLE) {
-        _safeMint(receiver, numTokensMinted);
-        _setTokenURI(numTokensMinted, tokenUri);
-        emit MintNft(receiver, numTokensMinted);
+    function mint(address receiver, string calldata tokenUri) public onlyRole(MINTER_ROLE) returns(uint256) {
+        _tokenIds.increment();
+        uint256 newId = _tokenIds.current();
+        // _safeMint(receiver, numTokensMinted);
+        // _setTokenURI(numTokensMinted, tokenUri);
+        
+        _safeMint(receiver, newId);
+        _setTokenURI(newId, tokenUri);
 
-        numTokensMinted += 1;
+        emit MintNft(receiver, newId);
+
+        return newId;
+        // emit MintNft(receiver, numTokensMinted);
+
+        // numTokensMinted += 1;
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
@@ -44,5 +54,9 @@ contract CertNFT is ERC721URIStorage, AccessControl {
             interfaceId == type(IERC721Metadata).interfaceId ||
             super.supportsInterface(interfaceId);
         
+    }
+
+    function getContractOwner() public view returns(address) {
+        return _owner;
     }
 }

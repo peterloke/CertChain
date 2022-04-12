@@ -5,24 +5,29 @@ import "./CertNFT.sol";
 
 
 contract CertChain is AccessControl {
-  CertNFT public nftContract;
+  CertNFT public certToken;
 
-  bytes32 public const INSTITUTION_ROLE = keccak256("INSTITUTION_ROLE");
+  bytes32 public constant INSTITUTION_ROLE = keccak256("INSTITUTION_ROLE");
 
+  address private _owner;
   mapping(uint256 => bool) private isActive;
   mapping(bytes32 => uint256[]) private listOfCertsId;
   mapping(uint256 => bytes32) private certholder;
 
-
+  event AddedInstitution(address institution);
+  event RemovedInstitution(address institution);
+  event CreateCert(bytes32 certHolder, uint256 tokenId);
+  event DeactivateCert(uint256 tokenId);
 
   constructor(CertNFT cnft) {
-    nftContract = cnft;
+    _owner = _msgSender();
+    certToken = cnft;
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
   }
 
-  modifier onlyTokenOwner(uint 256 id){
-    require(nftContract.ownerOf(id) == _msgSender);
+  modifier onlyTokenOwner(uint256 id){
+    require(certToken.ownerOf(id) == _msgSender());
     _;
   }
 
@@ -34,8 +39,10 @@ contract CertChain is AccessControl {
         return isActive[id];
   }
 
-  function setIsActiveCert(uint256 id, bool status) external onlyTokenOwner(id) {
-        isActive[id] = status;
+  function deactivateCert(uint256 id) external onlyTokenOwner(id) {
+    require(isActive[id] == true, "Certificate already deactivated!");
+    isActive[id] = false;
+    emit DeactivateCert(id);
   }
 
   function getListOfCertsId(bytes32 certholderId) external view returns(uint256[] memory) {
@@ -43,14 +50,29 @@ contract CertChain is AccessControl {
   }
 
   function createCert(bytes32 certholderId, string memory tokenUri) external onlyRole(INSTITUTION_ROLE) {
-    uint256 id = nftContract.getNumTokensMinted();
-    nftContract.mint(_msgSender, tokenUri);
-    _initMetadata(id, certholderId);
+    // uint256 id = certToken.getNumTokensMinted();
+    // _initMetadata(id, certholderId);
+
+    uint256 tokenId = certToken.mint(_msgSender(), tokenUri);
+    _initMetadata(tokenId, certholderId);
+    emit CreateCert(certholderId, tokenId);
   }
 
-    function _initMetadata(uint256 id, bytes32 certholderId) internal {
-        isActive[id] = true;
-        listOfCertsId[certholderId].push(id);
-        certholder[id] = certholderId;
-    }
+  function _initMetadata(uint256 id, bytes32 certholderId) internal {
+      isActive[id] = true;
+      listOfCertsId[certholderId].push(id);
+      certholder[id] = certholderId;
+  }
+
+  function addInstitution(address institution) external {
+      grantRole(INSTITUTION_ROLE, institution);
+
+      emit AddedInstitution(institution);
+  }
+
+  function removeInstitution(address institution) external {
+      revokeRole(INSTITUTION_ROLE, institution);
+      
+      emit RemovedInstitution(institution);
+  }
 }
