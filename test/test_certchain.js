@@ -10,5 +10,6 @@ contract('CertChain', function(accounts) {
     });
 
     it('Test 1', async() => {
+        const cid = "Qmahhk78zqecYeCW9h4ZSmFFnfnwmKaHhYJEVdXpjrmTNa";
     });
 });
