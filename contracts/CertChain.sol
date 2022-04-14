@@ -31,11 +31,11 @@ contract CertChain is AccessControl {
     _;
   }
 
-  function getCertholder(uint256 id) external view returns(bytes32){
+  function getCertholder(uint256 id) public view returns(bytes32){
         return certholder[id];
   }
 
-  function getIsActiveCert(uint256 id) external view returns(bool) {
+  function getIsActiveCert(uint256 id) public view returns(bool) {
         return isActive[id];
   }
 
@@ -49,13 +49,15 @@ contract CertChain is AccessControl {
         return listOfCertsId[certholderId];
   }
 
-  function createCert(bytes32 certholderId, string memory tokenUri) external onlyRole(INSTITUTION_ROLE) {
+  function createCert(bytes32 certholderId, string memory tokenUri) external onlyRole(INSTITUTION_ROLE) returns(uint256) {
     // uint256 id = certToken.getNumTokensMinted();
     // _initMetadata(id, certholderId);
 
     uint256 tokenId = certToken.mint(_msgSender(), tokenUri);
     _initMetadata(tokenId, certholderId);
     emit CreateCert(certholderId, tokenId);
+
+    return tokenId;
   }
 
   function _initMetadata(uint256 id, bytes32 certholderId) internal {
@@ -74,5 +76,15 @@ contract CertChain is AccessControl {
       revokeRole(INSTITUTION_ROLE, institution);
       
       emit RemovedInstitution(institution);
+  }
+
+  function validateCert(bytes32 candidate, uint256 tokenId) external view returns(bool){
+      bool certStatus = getIsActiveCert(tokenId);
+      if (certStatus) {
+          bytes32 certOwner = getCertholder(tokenId);
+          return candidate == certOwner;
+      } else {
+          return false;
+      }
   }
 }

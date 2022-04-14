@@ -19,6 +19,8 @@ contract CertNFT is ERC721URIStorage, AccessControl {
     // uint256 private numTokensMinted;
     // event MintNft(address indexed sender, uint256 startWith);
     event MintNft(address indexed sender, uint256 tokenId);
+    event AddedMinter(address institution);
+    event RemovedMinter(address institution);
 
 
 
@@ -59,4 +61,16 @@ contract CertNFT is ERC721URIStorage, AccessControl {
     function getContractOwner() public view returns(address) {
         return _owner;
     }
+
+    function addMinter(address institution) external {
+      grantRole(MINTER_ROLE, institution);
+
+      emit AddedMinter(institution);
+  }
+
+  function removeMinter(address institution) external {
+      revokeRole(MINTER_ROLE, institution);
+      
+      emit RemovedMinter(institution);
+  }
 }
