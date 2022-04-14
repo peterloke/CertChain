@@ -36,13 +36,16 @@ contract('CertChain', function(accounts) {
     });
 
     it('Create Cert', async() => {
-        // let certholder = utils.keccak256(utils.toUtf8Bytes("John Doe, 1999-9-9"));
         let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
         let certholder = buf.toString();
         let cid = "Qmahhk78zqecYeCW9h4ZSmFFnfnwmKaHhYJEVdXpjrmTNa"; // cert pdf file cid on IPFS
         let createCert = await certChainInstance.createCert(certholder, cid, { from: accounts[1] });
-        // token id = 1
         truffleAssert.eventEmitted(createCert, "CreateCert");
+    });
+
+    it('Retrieve Cert URI (IPFS cid)', async() => {
+        let cid = await certNFTInstance.tokenURI(1);
+        assert.strictEqual(cid,"Qmahhk78zqecYeCW9h4ZSmFFnfnwmKaHhYJEVdXpjrmTNa", "incorrect Cert URI returned");
     });
 
     it('Validate Cert (incorrect details)', async() => {
