@@ -1,7 +1,7 @@
 const _deploy_contracts = require("../migrations/2_deploy_contracts");
 const truffleAssert = require('truffle-assertions');
 var assert = require('assert');
-const { keccak256 } = require("ethers/lib/utils");
+const utils = require('../src/utils');
 
 var CertChain = artifacts.require("../contracts/CertChain.sol");
 var CertNFT = artifacts.require("../contracts/CertNFT.sol");
@@ -12,54 +12,79 @@ contract('CertChain', function(accounts) {
         certNFTInstance = await CertNFT.deployed();
     });
 
+    it('Add Minter', async() => {
+        let addMinter = await certNFTInstance.addMinter(certChainInstance.address);
+        truffleAssert.eventEmitted(addMinter, "AddedMinter");
+    });
+
     it('Add Institution', async() => {
         let institution = accounts[1];
 
-        certChainInstance.addInstitution(institution);
-        truffleAssert.eventEmitted(AddedInstitution, "AddedInstitution");
+        let addInstitution = await certChainInstance.addInstitution(institution);
+        truffleAssert.eventEmitted(addInstitution, "AddedInstitution");
+    });
 
-        certNFTInstance.addMinter(institution);
-        truffleAssert.eventEmitted(AddedMinter, "AddedMinter");
+    it('Fail to Create Cert (non-institution)', async() => {
+        // let certholder = utils.keccak256(utils.toUtf8Bytes("John Doe, 1999-9-9"));
+        let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
+        let certholder = buf.toString();
+        let cid = "Qmahhk78zqecYeCW9h4ZSmFFnfnwmKaHhYJEVdXpjrmTNa"; // cert pdf file cid on IPFS
+        await truffleAssert.fails(
+            certChainInstance.createCert(certholder, cid, { from: accounts[2] }),
+            truffleAssert.ErrorType.REVERT,
+        );    
     });
 
     it('Create Cert', async() => {
-        let certholder = keccak256("John Doe, 1999-9-9");
+        // let certholder = utils.keccak256(utils.toUtf8Bytes("John Doe, 1999-9-9"));
+        let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
+        let certholder = buf.toString();
         let cid = "Qmahhk78zqecYeCW9h4ZSmFFnfnwmKaHhYJEVdXpjrmTNa"; // cert pdf file cid on IPFS
-        let tokenId = certChainInstance.createCert(certholder, cid, { from: accounts[1] });
-        truffleAssert.eventEmitted(CreateCert, "CreateCert");
+        let createCert = await certChainInstance.createCert(certholder, cid, { from: accounts[1] });
+        // token id = 1
+        truffleAssert.eventEmitted(createCert, "CreateCert");
     });
 
     it('Validate Cert (incorrect details)', async() => {
-        let invalidCertholder = keccak256("Not John Doe, 1999-9-9");
-        let validationStatus = certChainInstance.validateCert(invalidCertholder, tokenId);
-
+        let buf = utils.keccak256Packed(["string", "string"], ["Not John Doe", "1999-9-9"]);
+        let invalidCertholder = buf.toString();
+        let validationStatus = await certChainInstance.validateCert(invalidCertholder, 1);
         assert.strictEqual(validationStatus, false, "Cert not validated correctly");
     });
 
     it('Validate Cert (correct details)', async() => {
-        let validCertholder = keccak256("John Doe, 1999-9-9");
-        let validationStatus = certChainInstance.validateCert(validCertholder, tokenId);
+        let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
+        let validCertholder = buf.toString();
+        let validationStatus = await certChainInstance.validateCert(validCertholder, 1);
 
         assert.strictEqual(validationStatus, true, "Cert not validated correctly");
     });
 
     it('Retrieve Cert List', async() => {
-        let certList = certChainInstance.getListOfCertsId(validCertholder);
-        assert.strictEqual(certList, [tokenId], "Cert list not retrieved correctly");
+        let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
+        let validCertholder = buf.toString();
+
+        let cid2 = "Qmahhk78zqecYeCW9h4ZSmFFnfnwmKaHhYJEVdXpjrmTNa"; // cert pdf file cid on IPFS
+        let createCert = await certChainInstance.createCert(validCertholder, cid2, { from: accounts[1] });
+
+        let certList = await certChainInstance.getListOfCertsId(validCertholder);
+        assert.strictEqual(certList[0].toNumber(), 1, "Cert list not retrieved correctly");
+        assert.strictEqual(certList[1].toNumber(), 2, "Cert list not retrieved correctly");
     });
 
     it('Deactivate Cert (not owner)', async() => {
-        await truffleAssert.reverts(certChainInstance.deactivateCert(tokenId, { from: accounts[2] }), "Only owner can deactivate certificate")
+        await truffleAssert.reverts(certChainInstance.deactivateCert(1, { from: accounts[2] }), "Only owner can deactivate certificate")
     });
 
     it('Deactivate Cert (owner)', async() => {
-        certChainInstance.deactivateCert(tokenId, { from: accounts[1] });
-        truffleAssert.eventEmitted(DeactivateCert, "DeactivateCert")
+        let deactivateCert = await certChainInstance.deactivateCert(1, { from: accounts[1] });
+        truffleAssert.eventEmitted(deactivateCert, "DeactivateCert")
     });
 
     it('Validate Cert (deactivated cert)', async() => {
-        let validationStatus = certChainInstance.validateCert(validCertholder, tokenId);
-
+        let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
+        let validCertholder = buf.toString();
+        let validationStatus = await certChainInstance.validateCert(validCertholder, 1);
         assert.strictEqual(validationStatus, false, "Cert not validated correctly");
     });
 });
