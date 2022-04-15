@@ -42,17 +42,17 @@ contract CertNFT is ERC721URIStorage, AccessControl {
     }
 
     // Add Minters to contract (grant minter role to address)
-    function addMinter(address institution) external {
-      grantRole(MINTER_ROLE, institution);
+    function addMinter(address minter) external {
+      grantRole(MINTER_ROLE, minter);
 
-      emit AddedMinter(institution);
+      emit AddedMinter(minter);
     }
 
     // Remove Minters from contract (revoked minter role from address)
-    function removeMinter(address institution) external {
-        revokeRole(MINTER_ROLE, institution);
+    function removeMinter(address minter) external {
+        revokeRole(MINTER_ROLE, minter);
         
-        emit RemovedMinter(institution);
+        emit RemovedMinter(minter);
     }
     
     // getter method(s)
