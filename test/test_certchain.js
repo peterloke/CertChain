@@ -24,6 +24,12 @@ contract('CertChain', function(accounts) {
         truffleAssert.eventEmitted(addInstitution, "AddedInstitution");
     });
 
+    it('Fail to add Institution (not contract owner)', async() => {
+        let institution = accounts[2];
+
+        await truffleAssert.reverts(certChainInstance.addInstitution(institution, {from: accounts[3]}));
+    });
+
     it('Fail to Create Cert (non-institution)', async() => {
         let buf = utils.keccak256Packed(["string", "string"], ["John Doe", "1999-9-9"]);
         let certholder = buf.toString();
